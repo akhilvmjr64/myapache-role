@@ -2,6 +2,7 @@
 # tasks file for myapache
 - name : "configuring yum"
   copy :
+    mode : preserve
     src : "yum.repo"
     dest : "/etc/yum.repos.d/reverseproxy.repo"
 - name : "installing httpd package for server"
@@ -14,21 +15,25 @@
     state : present
 - name : "removing the index.html file on webserver"
   file :
+    mode : 0644
     path : "/var/www/html/index.html"
     state : absent
 - name : "copying the php file to the webserver"
   copy :
+    mode: preserve
     src : "index.php"
     dest : "/var/www/html/index.php"
 - name : "copying the httpd configuration file for the server"
   template :
+    mode : 0644
     src : "httpd.conf"
     dest : "/etc/httpd/conf/httpd.conf"
   notify : "restarting httpd service"
 - name : "setting the selinux to permissive mode"
-  shell : "setenforce 0"
-- name : "killing the service running the {{server_port}} port"
-  shell : "kill `netstat -tnlp | grep :{{server_port}} | awk '{print $7}' | awk -F/ '{print $1}'`"
+  selinux :
+    state: disabled
+- name : "killing the service running the {{ server_port }} port"
+  shell : "kill `netstat -tnlp | grep :{{ server_port }} | awk '{print $7}' | awk -F/ '{print $1}'`"
   ignore_errors : yes
 - name : "starting the httpd service"
   service :
@@ -40,6 +45,6 @@
     state : restarted
 - name : "changing settings for firewall"
   firewalld :
-    port : "{{server_port}}/tcp"
+    port : "{{ server_port }}/tcp"
     state : enabled
     immediate : yes
